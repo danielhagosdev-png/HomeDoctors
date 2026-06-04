@@ -1,0 +1,522 @@
+/**
+ * generateDiseases.js
+ * Run: node scripts/generateDiseases.js
+ * Output: assets/diseases.json  (1000+ entries)
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+// ─── Seed data: 1000+ real disease names grouped by category ─────────────────
+
+const SEED = {
+  eyes: [
+    'Conjunctivitis','Dry Eye Syndrome','Stye (Hordeolum)','Chalazion','Blepharitis',
+    'Uveitis','Glaucoma','Cataracts','Macular Degeneration','Diabetic Retinopathy',
+    'Retinal Detachment','Color Blindness','Amblyopia (Lazy Eye)','Strabismus',
+    'Pterygium','Pinguecula','Corneal Ulcer','Keratitis','Iritis','Scleritis',
+    'Episcleritis','Optic Neuritis','Orbital Cellulitis','Dacryocystitis',
+    'Dacryostenosis','Entropion','Ectropion','Trichiasis','Xanthelasma',
+    'Floaters and Flashes','Night Blindness','Photophobia','Nystagmus',
+    'Presbyopia','Myopia','Hyperopia','Astigmatism','Subconjunctival Hemorrhage',
+    'Chemical Eye Burn','Snow Blindness','Arc Eye (Welder\'s Flash)','Eye Strain',
+    'Computer Vision Syndrome','Ocular Hypertension','Retinitis Pigmentosa',
+    'Central Retinal Artery Occlusion','Central Retinal Vein Occlusion',
+    'Vitreous Hemorrhage','Eyelid Dermatitis','Contact Lens Keratitis',
+  ],
+  teeth: [
+    'Dental Caries (Tooth Decay)','Toothache','Gingivitis','Periodontitis',
+    'Dental Abscess','Tooth Sensitivity','Bruxism (Teeth Grinding)','Dry Socket',
+    'Impacted Wisdom Tooth','Mouth Ulcers (Aphthous Stomatitis)','Oral Thrush',
+    'Leukoplakia','Oral Lichen Planus','Geographic Tongue','Black Hairy Tongue',
+    'Glossitis','Stomatitis','Angular Cheilitis','Cheilitis','Halitosis',
+    'Xerostomia (Dry Mouth)','Temporomandibular Joint Disorder (TMJ)',
+    'Dental Fluorosis','Enamel Hypoplasia','Amelogenesis Imperfecta',
+    'Dentinogenesis Imperfecta','Cracked Tooth Syndrome','Tooth Erosion',
+    'Gum Recession','Pericoronitis','Necrotizing Ulcerative Gingivitis',
+    'Salivary Gland Infection','Parotitis','Sialadenitis','Salivary Gland Stone',
+    'Mucocele','Ranula','Epulis','Fibroma (Oral)','Papilloma (Oral)',
+    'Torus Palatinus','Torus Mandibularis','Burning Mouth Syndrome',
+    'Oral Submucous Fibrosis','Denture Stomatitis','Orthodontic Pain',
+    'Pulpitis','Periapical Abscess','Hypercementosis',
+  ],
+  skin: [
+    'Acne Vulgaris','Eczema (Atopic Dermatitis)','Psoriasis','Rosacea',
+    'Seborrheic Dermatitis','Contact Dermatitis','Urticaria (Hives)',
+    'Ringworm (Tinea Corporis)','Athlete\'s Foot (Tinea Pedis)',
+    'Jock Itch (Tinea Cruris)','Tinea Versicolor','Onychomycosis (Nail Fungus)',
+    'Impetigo','Cellulitis','Erysipelas','Folliculitis','Furuncle (Boil)',
+    'Carbuncle','Hidradenitis Suppurativa','Pilonidal Cyst','Sebaceous Cyst',
+    'Lipoma','Keloid','Hypertrophic Scar','Stretch Marks','Vitiligo',
+    'Melasma','Freckles','Age Spots (Solar Lentigines)','Dermatofibroma',
+    'Epidermoid Cyst','Milia','Syringoma','Xanthoma','Acanthosis Nigricans',
+    'Keratosis Pilaris','Ichthyosis Vulgaris','Pityriasis Rosea',
+    'Lichen Planus','Lichen Sclerosus','Granuloma Annulare','Erythema Multiforme',
+    'Erythema Nodosum','Pemphigus Vulgaris','Bullous Pemphigoid',
+    'Dermatitis Herpetiformis','Scabies','Lice (Pediculosis)','Bed Bug Bites',
+    'Flea Bites','Mosquito Bite Reaction','Sunburn','Polymorphous Light Eruption',
+    'Phototoxic Dermatitis','Drug Rash','Toxic Epidermal Necrolysis',
+    'Stevens-Johnson Syndrome','Pityriasis Lichenoides','Purpura','Petechiae',
+    'Ecchymosis','Hemangioma','Port Wine Stain','Cherry Angioma',
+    'Spider Angioma','Pyogenic Granuloma','Warts (Verruca Vulgaris)',
+    'Plantar Warts','Molluscum Contagiosum','Herpes Zoster (Shingles)',
+    'Cold Sores (Herpes Simplex)','Hand Foot and Mouth Disease','Measles Rash',
+    'Chickenpox','Scarlet Fever Rash','Rocky Mountain Spotted Fever',
+    'Lyme Disease Rash','Intertrigo','Diaper Rash','Nummular Eczema',
+    'Dyshidrotic Eczema','Neurodermatitis','Prurigo Nodularis',
+    'Stasis Dermatitis','Lipodermatosclerosis','Pressure Ulcer',
+    'Ingrown Toenail','Paronychia','Whitlow (Herpetic)','Corn and Callus',
+    'Blister','Abrasion','Laceration','Puncture Wound',
+    'Sebaceous Hyperplasia','Comedone','Miliaria (Heat Rash)',
+    'Grover\'s Disease','Fox-Fordyce Disease','Darier\'s Disease',
+  ],
+  stomach: [
+    'Gastroesophageal Reflux Disease (GERD)','Peptic Ulcer Disease',
+    'Gastritis','Gastroparesis','Hiatal Hernia','Esophagitis',
+    'Barrett\'s Esophagus','Dysphagia','Achalasia','Esophageal Spasm',
+    'Gastroenteritis','Food Poisoning','Traveler\'s Diarrhea',
+    'Irritable Bowel Syndrome (IBS)','Inflammatory Bowel Disease (IBD)',
+    'Crohn\'s Disease','Ulcerative Colitis','Diverticulitis','Diverticulosis',
+    'Appendicitis','Peritonitis','Intestinal Obstruction','Volvulus',
+    'Intussusception','Inguinal Hernia','Umbilical Hernia','Celiac Disease',
+    'Lactose Intolerance','Fructose Malabsorption','Small Intestinal Bacterial Overgrowth (SIBO)',
+    'Constipation','Chronic Diarrhea','Fecal Impaction','Hemorrhoids',
+    'Anal Fissure','Rectal Prolapse','Proctitis','Colitis',
+    'Ischemic Colitis','Microscopic Colitis','Colonic Polyps',
+    'Pancreatitis (Acute)','Pancreatitis (Chronic)','Pancreatic Insufficiency',
+    'Liver Cirrhosis','Fatty Liver Disease (NAFLD)','Hepatitis A',
+    'Hepatitis B','Hepatitis C','Autoimmune Hepatitis','Primary Biliary Cholangitis',
+    'Cholecystitis','Cholelithiasis (Gallstones)','Cholangitis',
+    'Primary Sclerosing Cholangitis','Biliary Dyskinesia',
+    'Nausea and Vomiting','Cyclic Vomiting Syndrome','Bloating',
+    'Functional Dyspepsia','Abdominal Adhesions','Mesenteric Lymphadenitis',
+    'Whipple\'s Disease','Tropical Sprue','Protein-Losing Enteropathy',
+    'Short Bowel Syndrome','Intestinal Pseudo-Obstruction',
+    'Ogilvie Syndrome','Gastrointestinal Bleeding','Hematemesis',
+    'Melena','Hematochezia','Angiodysplasia (GI)','Dieulafoy Lesion',
+  ],
+  fever: [
+    'Influenza (Flu)','Common Cold','COVID-19','RSV Infection',
+    'Mononucleosis (Mono)','Strep Throat','Tonsillitis','Pharyngitis',
+    'Laryngitis','Scarlet Fever','Rheumatic Fever','Typhoid Fever',
+    'Malaria','Dengue Fever','Chikungunya','Zika Virus Infection',
+    'Yellow Fever','Ebola Virus Disease','Marburg Virus Disease',
+    'Lassa Fever','West Nile Virus','Encephalitis (Viral)','Meningitis (Viral)',
+    'Meningitis (Bacterial)','Sepsis','Bacteremia','Endocarditis',
+    'Osteomyelitis','Pyelonephritis','Urinary Tract Infection',
+    'Pneumonia (Bacterial)','Pneumonia (Viral)','Tuberculosis',
+    'Pertussis (Whooping Cough)','Diphtheria','Mumps','Measles (Rubeola)',
+    'Rubella','Chickenpox (Varicella)','Shingles (Herpes Zoster)',
+    'Hand Foot and Mouth Disease','Roseola Infantum','Fifth Disease',
+    'Kawasaki Disease','Rocky Mountain Spotted Fever','Lyme Disease',
+    'Q Fever','Brucellosis','Leptospirosis','Rat-Bite Fever',
+    'Rickettsia Infection','Typhus (Murine)','Typhus (Epidemic)',
+    'Cat Scratch Disease','Toxoplasmosis','Cryptosporidiosis',
+    'Giardiasis','Amoebiasis','Leishmaniasis','Trypanosomiasis',
+    'Chagas Disease','Schistosomiasis','Filariasis','Ascariasis',
+    'Hookworm Infection','Tapeworm Infection','Pinworm Infection',
+    'Cellulitis with Fever','Erysipelas with Fever','Abscess (Systemic)',
+    'Drug Fever','Heat Stroke','Heat Exhaustion','Fever of Unknown Origin',
+    'Periodic Fever Syndrome','Familial Mediterranean Fever',
+  ],
+  injuries: [
+    'Sprain (Ankle)','Sprain (Wrist)','Sprain (Knee)','Strain (Muscle)',
+    'Strain (Hamstring)','Strain (Quadriceps)','Strain (Back)',
+    'Fracture (Stress)','Fracture (Closed)','Fracture (Hairline)',
+    'Dislocation (Shoulder)','Dislocation (Finger)','Dislocation (Knee)',
+    'Contusion (Bruise)','Hematoma','Laceration','Abrasion',
+    'Puncture Wound','Avulsion','Crush Injury','Degloving Injury',
+    'Minor Burn (1st Degree)','Partial Burn (2nd Degree)','Sunburn',
+    'Chemical Burn','Electrical Burn','Frostbite','Hypothermia',
+    'Heat Cramps','Rhabdomyolysis','Compartment Syndrome',
+    'Tendinitis (Achilles)','Tendinitis (Rotator Cuff)','Tendinitis (Patellar)',
+    'Tennis Elbow (Lateral Epicondylitis)','Golfer\'s Elbow (Medial Epicondylitis)',
+    'Carpal Tunnel Syndrome','Trigger Finger','De Quervain\'s Tenosynovitis',
+    'Plantar Fasciitis','Shin Splints (MTSS)','Iliotibial Band Syndrome',
+    'Runner\'s Knee (Patellofemoral Syndrome)','Bursitis (Hip)',
+    'Bursitis (Shoulder)','Bursitis (Knee)','Meniscus Tear',
+    'ACL Tear','Rotator Cuff Tear','Biceps Tendon Rupture',
+    'Achilles Tendon Rupture','Concussion','Traumatic Brain Injury (Mild)',
+    'Whiplash','Cervical Strain','Lumbar Strain','Sacroiliac Joint Sprain',
+    'Rib Contusion','Rib Fracture','Clavicle Fracture','Nose Fracture',
+    'Jaw Fracture','Finger Fracture','Wrist Fracture (Colles)','Ankle Fracture',
+    'Toe Fracture','Ingrown Toenail (Traumatic)','Subungual Hematoma',
+    'Eye Contusion','Corneal Abrasion','Foreign Body (Eye)',
+    'Foreign Body (Ear)','Foreign Body (Nose)','Insect Sting Reaction',
+    'Snake Bite','Spider Bite','Tick Bite','Jellyfish Sting',
+    'Near Drowning','Decompression Sickness','Altitude Sickness',
+  ],
+  respiratory: [
+    'Asthma','Chronic Obstructive Pulmonary Disease (COPD)','Emphysema',
+    'Chronic Bronchitis','Acute Bronchitis','Bronchiolitis','Bronchiectasis',
+    'Pneumonia (Community-Acquired)','Pneumonia (Hospital-Acquired)',
+    'Aspiration Pneumonia','Pleuritis (Pleurisy)','Pleural Effusion',
+    'Pneumothorax','Hemothorax','Pulmonary Embolism','Deep Vein Thrombosis',
+    'Pulmonary Hypertension','Pulmonary Fibrosis','Idiopathic Pulmonary Fibrosis',
+    'Sarcoidosis (Pulmonary)','Hypersensitivity Pneumonitis',
+    'Occupational Asthma','Exercise-Induced Bronchoconstriction',
+    'Acute Respiratory Distress Syndrome (ARDS)',
+    'Respiratory Failure','Sleep Apnea (Obstructive)','Sleep Apnea (Central)',
+    'Snoring','Croup','Epiglottitis','Laryngotracheobronchitis',
+    'Tracheitis','Tracheomalacia','Vocal Cord Dysfunction',
+    'Sinusitis (Acute)','Sinusitis (Chronic)','Rhinitis (Allergic)',
+    'Rhinitis (Non-Allergic)','Nasal Polyps','Deviated Nasal Septum',
+    'Epistaxis (Nosebleed)','Upper Respiratory Tract Infection',
+    'Pertussis (Whooping Cough)','Tuberculosis (Pulmonary)',
+    'Non-Tuberculous Mycobacterial Infection','Histoplasmosis',
+    'Coccidioidomycosis','Aspergillosis','Pneumocystis Pneumonia',
+    'Legionnaire\'s Disease','Q Fever (Pulmonary)','Anthrax (Pulmonary)',
+    'Mesothelioma','Lung Cancer (NSCLC)','Lung Cancer (SCLC)',
+    'Benign Lung Nodule','Hamartoma (Pulmonary)','Atelectasis',
+    'Mucus Plugging','Dyspnea','Chronic Cough','Hemoptysis',
+    'Cystic Fibrosis','Alpha-1 Antitrypsin Deficiency',
+    'Pulmonary Alveolar Proteinosis','Lymphangioleiomyomatosis',
+    'Good Pasture Syndrome','Wegener\'s Granulomatosis (GPA)',
+    'Pleural Mesothelioma','Tracheal Stenosis','Vocal Cord Paralysis',
+    'Laryngeal Cancer','Mediastinitis','Empyema (Pleural)','Lung Abscess',
+    'Pulmonary Contusion','Diaphragmatic Hernia','Obesity Hypoventilation Syndrome',
+    'High Altitude Pulmonary Edema','Pulmonary Edema','Respiratory Syncytial Virus',
+    'Parainfluenza Virus Infection','Adenovirus Respiratory Infection',
+    'Rhinovirus Infection','Metapneumovirus Infection',
+  ],
+  head: [
+    'Tension Headache','Migraine','Cluster Headache','Trigeminal Neuralgia',
+    'Occipital Neuralgia','Cervicogenic Headache','Sinus Headache',
+    'Thunderclap Headache','Chronic Daily Headache','Hemicrania Continua',
+    'New Daily Persistent Headache','Post-Concussion Headache',
+    'Medication Overuse Headache','Idiopathic Intracranial Hypertension',
+    'Temporal Arteritis (Giant Cell Arteritis)','Meningitis',
+    'Encephalitis','Brain Abscess','Subdural Hematoma','Epidural Hematoma',
+    'Subarachnoid Hemorrhage','Stroke (Ischemic)','TIA (Mini Stroke)',
+    'Vertigo (BPPV)','Labyrinthitis','Vestibular Neuritis',
+    'Meniere\'s Disease','Acoustic Neuroma','Tinnitus',
+    'Sudden Sensorineural Hearing Loss','Conductive Hearing Loss',
+    'Otitis Media (Acute)','Otitis Media (Chronic)','Otitis Media with Effusion',
+    'Otitis Externa (Swimmer\'s Ear)','Malignant Otitis Externa',
+    'Cholesteatoma','Otosclerosis','Perforated Eardrum',
+    'Barotrauma (Ear)','Earwax Impaction','Mastoiditis',
+    'Bell\'s Palsy','Ramsay Hunt Syndrome','Hemifacial Spasm',
+    'Parotitis','Mumps','Temporal Mandibular Joint Disorder',
+    'Otomycosis (Fungal Ear Infection)','Auricular Hematoma',
+    'Superior Canal Dehiscence','Perilymphatic Fistula',
+    'Auditory Processing Disorder','Hyperacusis','Misophonia',
+    'Labyrinthine Concussion','Sudden Deafness',
+    'Sinusitis (Frontal)','Sinusitis (Maxillary)','Sinusitis (Ethmoid)',
+    'Allergic Rhinitis','Nasal Polyps','Anosmia','Hyposmia',
+    'Dysgeusia','Taste Disorder','Facial Neuralgia',
+    'Glossopharyngeal Neuralgia','Optic Neuritis','Papilledema',
+    'Idiopathic Facial Pain','Dizziness','Presyncope','Syncope',
+    'Ataxia (Cerebellar)','Nystagmus (Central)','Diplopia',
+  ],
+  bones: [
+    'Osteoporosis','Osteopenia','Osteoarthritis','Rheumatoid Arthritis',
+    'Psoriatic Arthritis','Ankylosing Spondylitis','Reactive Arthritis',
+    'Gout','Pseudogout (CPPD)','Septic Arthritis','Osteomyelitis',
+    'Paget\'s Disease of Bone','Osteonecrosis (Avascular Necrosis)',
+    'Fibromyalgia','Polymyalgia Rheumatica','Giant Cell Arteritis',
+    'Systemic Lupus Erythematosus (SLE)','Sjögren\'s Syndrome',
+    'Scleroderma','Mixed Connective Tissue Disease','Polymyositis',
+    'Dermatomyositis','Vasculitis','Spondylolisthesis','Scoliosis',
+    'Kyphosis','Lordosis','Herniated Disc (Cervical)','Herniated Disc (Lumbar)',
+    'Spinal Stenosis','Sciatica','Piriformis Syndrome','Sacroiliitis',
+    'Coccydynia','Costochondritis','Tietze Syndrome','Fibrous Dysplasia',
+    'Enchondroma','Osteochondroma','Chondromalacia Patella',
+    'Patellofemoral Syndrome','Patellar Tendinopathy','Jumper\'s Knee',
+    'Legg-Calvé-Perthes Disease','Slipped Capital Femoral Epiphysis',
+    'Osgood-Schlatter Disease','Sever\'s Disease','Growing Pains',
+    'Marfan Syndrome','Ehlers-Danlos Syndrome','Hypermobility Syndrome',
+    'Reflex Sympathetic Dystrophy (CRPS)','Phantom Limb Pain',
+    'Carpal Tunnel Syndrome','Cubital Tunnel Syndrome','Tarsal Tunnel Syndrome',
+    'Dupuytren\'s Contracture','Ganglion Cyst','Baker\'s Cyst',
+    'Flat Feet (Pes Planus)','High Arches (Pes Cavus)','Hallux Valgus (Bunion)',
+    'Hammer Toe','Metatarsalgia','Morton\'s Neuroma','Heel Spur',
+  ],
+  heart: [
+    'Hypertension (High Blood Pressure)','Hypotension (Low Blood Pressure)',
+    'Coronary Artery Disease','Angina Pectoris','Myocardial Infarction (Heart Attack)',
+    'Heart Failure (Systolic)','Heart Failure (Diastolic)','Cardiomyopathy (Dilated)',
+    'Cardiomyopathy (Hypertrophic)','Cardiomyopathy (Restrictive)',
+    'Atrial Fibrillation','Atrial Flutter','Supraventricular Tachycardia',
+    'Ventricular Tachycardia','Ventricular Fibrillation','Bradycardia',
+    'Heart Block (First Degree)','Heart Block (Second Degree)','Heart Block (Third Degree)',
+    'Sick Sinus Syndrome','Wolff-Parkinson-White Syndrome','Long QT Syndrome',
+    'Brugada Syndrome','Mitral Valve Prolapse','Mitral Stenosis',
+    'Mitral Regurgitation','Aortic Stenosis','Aortic Regurgitation',
+    'Tricuspid Regurgitation','Pulmonary Stenosis','Endocarditis (Infective)',
+    'Pericarditis','Myocarditis','Cardiac Tamponade','Aortic Aneurysm',
+    'Aortic Dissection','Peripheral Artery Disease','Raynaud\'s Phenomenon',
+    'Thrombophlebitis','Varicose Veins','Chronic Venous Insufficiency',
+    'Lymphedema','Hypercholesterolemia','Hypertriglyceridemia',
+    'Metabolic Syndrome','Obesity','Obesity-Hypoventilation Syndrome',
+    'Anemia (Iron Deficiency)','Anemia (B12 Deficiency)','Anemia (Folate)',
+    'Hemolytic Anemia','Sickle Cell Anemia','Thalassemia',
+    'Polycythemia Vera','Thrombocytopenia','Hemophilia',
+    'Deep Vein Thrombosis','Pulmonary Embolism','Antiphospholipid Syndrome',
+    'Von Willebrand Disease','Essential Thrombocythemia','Myelofibrosis',
+    'Aplastic Anemia','Myelodysplastic Syndrome','Chronic Myeloid Leukemia',
+    'Lymphoma (Hodgkin)','Lymphoma (Non-Hodgkin)','Multiple Myeloma',
+    'Hypercoagulable State','Factor V Leiden Mutation','Protein C Deficiency',
+    'Hereditary Hemochromatosis','Porphyria','Hypersplenism',
+  ],
+  mental: [
+    'Depression (Major Depressive Disorder)','Persistent Depressive Disorder (Dysthymia)',
+    'Bipolar Disorder Type I','Bipolar Disorder Type II','Cyclothymia',
+    'Generalized Anxiety Disorder','Panic Disorder','Social Anxiety Disorder',
+    'Specific Phobia','Agoraphobia','Separation Anxiety Disorder',
+    'Obsessive-Compulsive Disorder (OCD)','Body Dysmorphic Disorder',
+    'Hoarding Disorder','Trichotillomania','Excoriation Disorder',
+    'Post-Traumatic Stress Disorder (PTSD)','Acute Stress Disorder',
+    'Adjustment Disorder','Schizophrenia','Schizoaffective Disorder',
+    'Delusional Disorder','Brief Psychotic Disorder','Schizophreniform Disorder',
+    'Anorexia Nervosa','Bulimia Nervosa','Binge Eating Disorder',
+    'Avoidant/Restrictive Food Intake Disorder','Pica','Rumination Disorder',
+    'Attention-Deficit/Hyperactivity Disorder (ADHD)','Autism Spectrum Disorder',
+    'Intellectual Disability','Specific Learning Disorder','Tourette Syndrome',
+    'Insomnia Disorder','Hypersomnia','Narcolepsy','Restless Legs Syndrome',
+    'Sleep Terror Disorder','Sleepwalking Disorder','REM Sleep Behavior Disorder',
+    'Alcohol Use Disorder','Opioid Use Disorder','Cannabis Use Disorder',
+    'Stimulant Use Disorder','Gambling Disorder','Internet Gaming Disorder',
+    'Borderline Personality Disorder','Narcissistic Personality Disorder',
+    'Antisocial Personality Disorder','Avoidant Personality Disorder',
+    'Dependent Personality Disorder','Histrionic Personality Disorder',
+    'Paranoid Personality Disorder','Schizoid Personality Disorder',
+    'Dissociative Identity Disorder','Depersonalization-Derealization Disorder',
+    'Dissociative Amnesia','Somatic Symptom Disorder','Illness Anxiety Disorder',
+    'Functional Neurological Symptom Disorder','Factitious Disorder',
+    'Grief and Bereavement','Burnout Syndrome','Seasonal Affective Disorder',
+    'Reactive Attachment Disorder','Disinhibited Social Engagement Disorder',
+    'Selective Mutism','Oppositional Defiant Disorder','Conduct Disorder',
+    'Intermittent Explosive Disorder','Kleptomania','Pyromania',
+    'Derealization Disorder','Depressive Psychosis','Catatonia',
+  ],
+  urinary: [
+    'Urinary Tract Infection (UTI)','Cystitis','Pyelonephritis','Urethritis',
+    'Interstitial Cystitis','Overactive Bladder','Urinary Incontinence (Stress)',
+    'Urinary Incontinence (Urge)','Urinary Retention','Neurogenic Bladder',
+    'Kidney Stones (Nephrolithiasis)','Hydronephrosis','Renal Colic',
+    'Glomerulonephritis','Nephrotic Syndrome','Nephritic Syndrome',
+    'IgA Nephropathy','Polycystic Kidney Disease','Chronic Kidney Disease',
+    'Acute Kidney Injury','Renal Tubular Acidosis','Fanconi Syndrome',
+    'Vesicoureteral Reflux','Ureteropelvic Junction Obstruction',
+    'Retroperitoneal Fibrosis','Ureteral Stricture','Bladder Endometriosis',
+    'Benign Prostatic Hyperplasia','Prostatitis (Acute Bacterial)',
+    'Prostatitis (Chronic)','Epididymitis','Orchitis','Varicocele',
+    'Hydrocele','Testicular Torsion','Phimosis','Paraphimosis',
+    'Balanitis','Hematuria','Proteinuria','Pyuria','Nocturia','Dysuria',
+    'Bedwetting (Enuresis)','Bladder Calculi','Urethral Stricture',
+    'Vesicovaginal Fistula','Bladder Diverticulum',
+    'Cystocele','Urethral Prolapse','Urethral Caruncle',
+    'Renal Artery Stenosis','Renovascular Hypertension',
+    'Alport Syndrome','Medullary Sponge Kidney',
+    'Nephrocalcinosis','Renal Papillary Necrosis',
+    'Obstructive Uropathy','Urinary Fistula','Bladder Neck Obstruction',
+    'Urethral Diverticulum',
+  ],
+  womens: [
+    'Dysmenorrhea (Painful Periods)','Amenorrhea (Primary)','Amenorrhea (Secondary)',
+    'Menorrhagia (Heavy Periods)','Oligomenorrhea','Premenstrual Syndrome (PMS)',
+    'Premenstrual Dysphoric Disorder (PMDD)','Endometriosis',
+    'Polycystic Ovary Syndrome (PCOS)','Uterine Fibroids','Ovarian Cysts',
+    'Ovarian Torsion','Pelvic Inflammatory Disease','Cervicitis','Vaginitis',
+    'Bacterial Vaginosis','Vaginal Candidiasis (Thrush)','Trichomoniasis',
+    'Vulvodynia','Vaginismus','Dyspareunia','Pelvic Organ Prolapse',
+    'Stress Urinary Incontinence','Bartholin\'s Cyst','Vulvar Dermatitis',
+    'Lichen Sclerosus (Vulvar)','Menopause Symptoms','Perimenopause',
+    'Osteoporosis (Postmenopausal)','Mastitis','Breast Abscess',
+    'Fibrocystic Breast Changes','Nipple Discharge','Galactorrhea',
+    'Hyperprolactinemia','Premature Ovarian Insufficiency',
+    'Gestational Diabetes','Hyperemesis Gravidarum','Preeclampsia',
+    'Placenta Previa','Ectopic Pregnancy','Miscarriage','Postpartum Depression',
+    'Postpartum Hemorrhage','Diastasis Recti',
+    'Postnatal Anxiety','Postpartum Psychosis',
+    'Pelvic Girdle Pain (Pregnancy)','Cervical Incompetence',
+    'Placental Abruption','Ovarian Hyperstimulation Syndrome',
+    'Asherman\'s Syndrome','Uterine Septum','Cervical Polyp',
+    'Endometrial Polyp','Adenomyosis',
+    'Vaginal Atrophy (Genitourinary Syndrome of Menopause)',
+    'Pelvic Floor Dysfunction','Rectocele','Enterocele',
+  ],
+  childrens: [
+    'Colic','Reflux in Infants','Nappy Rash','Cradle Cap (Seborrheic Dermatitis)',
+    'Teething Pain','Febrile Seizures','Roseola Infantum','Fifth Disease (Slapped Cheek)',
+    'Hand Foot and Mouth Disease','Chickenpox','Measles','Mumps','Rubella',
+    'Whooping Cough (Pertussis)','Croup','Bronchiolitis (RSV)','Kawasaki Disease',
+    'Intussusception','Pyloric Stenosis','Hirschsprung\'s Disease',
+    'Necrotizing Enterocolitis','Meningitis (Childhood)','Encephalitis (Childhood)',
+    'Cerebral Palsy','Developmental Delay','Autism Spectrum Disorder (Childhood)',
+    'ADHD (Childhood)','Dyslexia','Dyscalculia','Enuresis (Bedwetting)',
+    'Encopresis','Growth Hormone Deficiency','Precocious Puberty',
+    'Delayed Puberty','Juvenile Idiopathic Arthritis','Duchenne Muscular Dystrophy',
+    'Spina Bifida','Hydrocephalus','Down Syndrome','Turner Syndrome',
+    'Klinefelter Syndrome','Phenylketonuria','Galactosemia',
+    'Cystic Fibrosis (Childhood)','Sickle Cell Disease (Childhood)',
+    'Thalassemia (Childhood)','Hemophilia (Childhood)','Idiopathic Thrombocytopenic Purpura',
+    'Wilms Tumor','Neuroblastoma','Leukemia (Childhood ALL)',
+    'Attention Issues in School','Sleep Problems in Children',
+    'Juvenile Dermatomyositis','Neonatal Jaundice','Respiratory Distress Syndrome (Newborn)',
+    'Transient Tachypnea of the Newborn','Neonatal Sepsis','Failure to Thrive',
+    'Rickets','Scurvy (Childhood)','Kwashiorkor','Marasmus',
+    'Fragile X Syndrome','Rett Syndrome','Prader-Willi Syndrome',
+    'Angelman Syndrome','22q11 Deletion Syndrome','Williams Syndrome',
+    'Noonan Syndrome','Congenital Heart Disease (ASD)','Congenital Heart Disease (VSD)',
+    'Patent Ductus Arteriosus','Tetralogy of Fallot',
+    'Congenital Hypothyroidism','Congenital Adrenal Hyperplasia',
+    'G6PD Deficiency','Hereditary Spherocytosis',
+  ],
+};
+
+// ─── Knowledge banks per category ────────────────────────────────────────────
+
+const CAUSES = {
+  eyes:      ['Bacterial infection','Viral infection','Allergic reaction','Environmental irritants','Prolonged screen use','Genetic predisposition','Autoimmune response','UV light exposure','Contact lens misuse','Age-related changes','Dry air or low humidity','Systemic disease (diabetes, hypertension)','Eye injury or trauma','Blocked tear duct','Eyelid abnormality'],
+  teeth:     ['Poor oral hygiene','Plaque and tartar buildup','Bacterial infection','High-sugar diet','Dry mouth','Smoking or tobacco use','Hormonal changes','Vitamin deficiency','Grinding or clenching teeth','Poorly fitting dentures','Acid erosion','Genetic factors','Immune system dysfunction','Stress','Mouth breathing'],
+  skin:      ['Bacterial infection','Fungal infection','Viral infection','Allergic reaction','Contact with irritants','Genetic predisposition','Autoimmune dysfunction','Hormonal imbalance','Excessive sweating','Poor hygiene','Nutritional deficiency','Stress or anxiety','Environmental triggers','Insect bites','Sun exposure'],
+  stomach:   ['Bacterial infection (H. pylori, Salmonella)','Viral gastroenteritis','Food intolerance or allergy','Excessive alcohol consumption','Stress and anxiety','NSAIDs or medication side effects','Poor diet (high fat, low fibre)','Altered gut microbiome','Autoimmune reaction','Genetic predisposition','Bile reflux','Smoking','Dehydration','Structural abnormality','Reduced gastric motility'],
+  fever:     ['Viral infection','Bacterial infection','Parasitic infection','Fungal infection','Inflammatory condition','Autoimmune disorder','Vaccination reaction','Heat exposure','Certain medications','Malignancy','Blood transfusion reaction','Unknown cause (idiopathic)','Insect or animal bite','Contaminated food or water','Travel to endemic region'],
+  injuries:  ['Trauma or accident','Sports injury','Overuse or repetitive motion','Fall','Motor vehicle accident','Work-related injury','Improper technique during exercise','Lack of warm-up','Weak or fatigued muscles','Inadequate protective equipment','Environmental hazard','Burns from heat or chemicals','Bites or stings','Extreme temperature exposure','Sudden force or impact'],
+  respiratory:['Viral infection','Bacterial infection','Allergens (pollen, dust, mould)','Air pollution and smoke','Tobacco smoking','Occupational exposure (dust, chemicals)','Genetic predisposition','Immune system dysfunction','Chronic inflammation','Acid reflux (GERD)','Exercise in cold air','Obesity','Sleep-related obstruction','Structural airway abnormality','Autoimmune condition'],
+  head:      ['Tension and stress','Dehydration','Sleep disturbance','Hormonal fluctuation','Ear infection','Inner ear disorder','Viral or bacterial infection','Head injury or concussion','Neurological condition','Blood pressure changes','Temporomandibular joint dysfunction','Sinus congestion','Medication side effects','Genetic predisposition','Cervical spine dysfunction'],
+  bones:     ['Age-related wear and tear','Autoimmune inflammation','Metabolic disorder','Calcium or vitamin D deficiency','Repetitive mechanical stress','Trauma or injury','Genetic predisposition','Hormonal imbalance','Sedentary lifestyle','Obesity','Previous joint injury','Infection','Crystal deposition (uric acid)','Poor posture','Occupational strain'],
+  heart:     ['Atherosclerosis','Hypertension','High cholesterol','Diabetes mellitus','Obesity','Smoking','Sedentary lifestyle','Family history of heart disease','Arrhythmia','Valve defect','Infection or inflammation','Autoimmune disorder','Electrolyte imbalance','Stress','Congenital heart defect'],
+  mental:    ['Genetic predisposition','Neurochemical imbalance','Childhood trauma or abuse','Chronic stress','Major life events','Social isolation','Substance use','Chronic physical illness','Sleep deprivation','Hormonal changes','Nutritional deficiency','Environmental factors','Personality traits','Learned thought patterns','Epigenetic factors'],
+  urinary:   ['Bacterial infection','Kidney stone','Structural abnormality','Autoimmune inflammation','Hormonal changes','Enlarged prostate','Neurological dysfunction','Dehydration','Poor hygiene','Sexual activity','Catheter use','Diabetes mellitus','Pregnancy','Medications','Genetic predisposition'],
+  womens:    ['Hormonal imbalance','Uterine or ovarian abnormality','Infection','Endometriosis','PCOS','Stress','Nutritional deficiency','Thyroid dysfunction','Autoimmune condition','Genetic factors','Pregnancy-related changes','Menopause','Structural pelvic abnormality','Medications','Immune system changes'],
+  childrens: ['Viral infection','Bacterial infection','Immune system immaturity','Genetic or chromosomal abnormality','Nutritional deficiency','Environmental exposure','Developmental variation','Allergy','Birth complication','Premature birth','Maternal infection during pregnancy','Vaccine-preventable pathogen','Parasitic infection','Metabolic disorder','Psychosocial stress'],
+};
+
+const SYMPTOMS = {
+  eyes:      ['Redness of the eye','Watery or sticky discharge','Itching or burning sensation','Blurred or reduced vision','Sensitivity to light (photophobia)','Swelling of the eyelid','Feeling of something in the eye','Pain or discomfort','Halos around lights','Double vision','Floaters or flashes','Eye fatigue','Crusting on eyelashes','Dry or gritty sensation','Abnormal eye movement'],
+  teeth:     ['Tooth pain or aching','Sensitivity to hot or cold','Swollen or bleeding gums','Bad breath (halitosis)','Loose teeth','Visible holes or dark spots on teeth','Pain when biting or chewing','Swelling of the jaw or face','Mouth sores or ulcers','Dry mouth','Difficulty swallowing','White patches inside mouth','Jaw clicking or pain','Metallic taste','Facial pain'],
+  skin:      ['Redness or inflammation','Itching (pruritus)','Rash or skin eruption','Blistering or weeping lesions','Scaling or flaking skin','Thickened or leathery skin','Pain or burning sensation','Swelling of affected area','Oozing or crusting','Skin discolouration','Hair loss in affected area','Nail changes','Warmth to touch','Open sores or ulcers','Dryness and cracking'],
+  stomach:   ['Abdominal pain or cramping','Nausea','Vomiting','Diarrhoea','Constipation','Bloating and gas','Heartburn or acid reflux','Loss of appetite','Blood in stool','Unintentional weight loss','Jaundice (yellowing)','Belching','Feeling full quickly','Difficulty swallowing','Rectal pain or bleeding'],
+  fever:     ['Elevated body temperature (>38°C)','Chills and shivering','Sweating','Headache','Muscle aches and fatigue','Loss of appetite','Nausea or vomiting','Sore throat','Cough','Runny or blocked nose','Rash','Joint pain','Swollen lymph nodes','Confusion or delirium','Sensitivity to light'],
+  injuries:  ['Pain at the injury site','Swelling and bruising','Limited range of motion','Muscle weakness','Tenderness to touch','Deformity or abnormal position','Inability to bear weight','Numbness or tingling','Skin wound or bleeding','Instability of joint','Muscle spasm','Stiffness','Audible pop or crack at time of injury','Discolouration of skin','Blistering'],
+  respiratory:['Shortness of breath (dyspnoea)','Persistent cough','Wheezing','Chest tightness or pain','Increased mucus or phlegm production','Noisy breathing (stridor)','Coughing up blood (haemoptysis)','Rapid breathing','Nasal congestion','Sore throat','Fever','Reduced oxygen saturation','Fatigue and weakness','Difficulty speaking in full sentences','Cyanosis (bluish lips or fingertips)'],
+  head:      ['Headache (dull, throbbing, or sharp)','Dizziness or vertigo','Ear pain or pressure','Hearing loss or muffled hearing','Ringing in ears (tinnitus)','Nausea and vomiting','Sensitivity to light or sound','Facial pain or numbness','Visual disturbances','Neck stiffness','Nasal congestion','Jaw pain','Confusion or memory difficulty','Facial drooping','Balance problems'],
+  bones:     ['Joint pain','Stiffness (especially morning stiffness)','Swelling around joints','Reduced range of motion','Bone pain','Muscle weakness','Tenderness to touch','Joint deformity','Cracking or grinding in joints (crepitus)','Fatigue','Difficulty walking or climbing stairs','Back pain','Nerve pain or tingling','Muscle wasting','Limping'],
+  heart:     ['Chest pain or tightness','Shortness of breath','Palpitations (racing heart)','Swelling in legs or ankles','Fatigue and weakness','Dizziness or lightheadedness','Fainting','Irregular heartbeat','Coughing (especially at night)','Reduced exercise tolerance','Cold hands and feet','Cyanosis','Nausea','Excessive sweating','High blood pressure reading'],
+  mental:    ['Persistent low mood or sadness','Excessive worry or fear','Difficulty sleeping','Changes in appetite or weight','Fatigue and loss of energy','Difficulty concentrating','Feelings of worthlessness or guilt','Social withdrawal','Irritability or mood swings','Hallucinations or delusions','Panic attacks','Flashbacks or nightmares','Compulsive behaviours','Suicidal thoughts','Memory problems'],
+  urinary:   ['Painful or burning urination (dysuria)','Frequent urge to urinate','Blood in urine (haematuria)','Cloudy or foul-smelling urine','Pelvic or lower back pain','Incomplete bladder emptying','Urinary incontinence','Fever and chills (with infection)','Flank pain','Nausea and vomiting','Difficulty starting urination','Weak urine stream','Nocturia (night urination)','Proteinuria (foamy urine)','Swelling (oedema)'],
+  womens:    ['Pelvic pain or cramping','Irregular or absent periods','Heavy or prolonged bleeding','Abnormal vaginal discharge','Vaginal itching or burning','Pain during intercourse','Bloating','Breast tenderness','Mood changes','Hot flushes','Vaginal dryness','Infertility','Nausea','Back pain','Pelvic pressure or fullness'],
+  childrens: ['Fever','Irritability or unusual crying','Rash','Cough or runny nose','Vomiting or diarrhoea','Poor feeding','Lethargy or unusual sleepiness','Ear pulling','Swollen lymph nodes','Breathing difficulties','Redness or swelling','Developmental regression','Abdominal pain','Skin changes','Seizures'],
+};
+
+const REMEDIES = {
+  eyes:      ['Apply a warm compress to closed eyes for 10 minutes, 3 times daily.','Rinse eyes gently with sterile saline solution.','Avoid rubbing your eyes with your hands.','Remove contact lenses until symptoms fully resolve.','Use over-the-counter lubricating eye drops (artificial tears).','Take regular breaks from screens (20-20-20 rule: every 20 min, look 20ft away for 20 sec).','Wear sunglasses outdoors to reduce UV exposure.','Keep eyelids clean by gently wiping with a warm damp cotton pad.','Increase humidity in your room with a humidifier.','Stay hydrated by drinking at least 8 glasses of water daily.'],
+  teeth:     ['Rinse with warm salt water (½ tsp salt in 1 cup warm water) several times a day.','Apply clove oil or a small amount of benzocaine gel to relieve tooth pain.','Use a soft-bristled toothbrush and fluoride toothpaste twice daily.','Floss daily to remove plaque between teeth.','Apply a cold pack to the outside of the cheek to reduce swelling.','Avoid very hot, cold, or sweet foods that trigger sensitivity.','Stay hydrated; sip water frequently to combat dry mouth.','Use an antiseptic alcohol-free mouthwash daily.','Chew sugar-free gum to stimulate saliva production.','Eat a diet low in sugar and high in calcium-rich foods (dairy, leafy greens).'],
+  skin:      ['Moisturise affected skin with a fragrance-free emollient at least twice daily.','Apply cool, damp compresses to relieve itching and inflammation.','Take lukewarm (not hot) showers and pat skin dry gently.','Use mild, fragrance-free soap and avoid harsh detergents.','Apply 1% hydrocortisone cream to small inflamed areas for up to 7 days.','Keep nails short to prevent skin damage from scratching.','Wear loose, breathable cotton clothing.','Identify and avoid personal triggers (foods, fabrics, stress).','Apply aloe vera gel from a fresh leaf to soothe minor rashes.','Keep the skin area clean and dry to prevent secondary infection.'],
+  stomach:   ['Eat small, frequent meals rather than large ones.','Stay well hydrated with water, clear broths, or oral rehydration solutions.','Avoid fatty, fried, spicy, and acidic foods during flare-ups.','Try ginger tea or peppermint tea to ease nausea and bloating.','Follow the BRAT diet (bananas, rice, applesauce, toast) during diarrhoea.','Take over-the-counter antacids for heartburn relief.','Do not lie down for at least 2 hours after eating.','Apply a warm heating pad to the abdomen to ease cramps.','Increase dietary fibre gradually (fruits, vegetables, whole grains) for constipation.','Reduce alcohol and caffeine intake.'],
+  fever:     ['Rest as much as possible and avoid strenuous activity.','Drink plenty of fluids: water, herbal teas, clear broths, diluted fruit juice.','Take paracetamol (acetaminophen) or ibuprofen to reduce fever and relieve pain.','Apply a cool damp cloth to the forehead, neck, and armpits.','Wear lightweight clothing and avoid heavy blankets.','Keep the room well ventilated at a comfortable temperature.','Gargle warm salt water for a sore throat.','Use saline nasal spray to relieve congestion.','Inhale steam (bowl of hot water with towel over head) to ease congestion.','Eat easily digestible foods: soup, yoghurt, crackers.'],
+  injuries:  ['Follow the RICE protocol: Rest, Ice (20 min every 2 hrs), Compression, Elevation.','Take ibuprofen or paracetamol for pain and inflammation.','Avoid putting weight on the injured area for 48–72 hours.','Cool a burn immediately under cool running water for 20 minutes.','Cover wounds with a clean sterile dressing and change daily.','Keep the wound clean; rinse gently with clean water if dirty.','For sprains, begin gentle range-of-motion exercises after 48 hours.','Use a supportive bandage or brace during activity.','Apply antibiotic cream to clean cuts to prevent infection.','Ensure tetanus vaccination is up to date for puncture wounds.'],
+  respiratory:['Rest your voice and body as much as possible.','Stay well hydrated to loosen mucus (warm water, herbal teas, broths).','Inhale steam with a towel over a bowl of hot water for 10 minutes.','Use a cool-mist humidifier in the bedroom overnight.','Take honey (1–2 tsp) to soothe cough; avoid in children under 1.','Elevate your head with an extra pillow during sleep.','Use saline nasal sprays or rinse to clear congestion.','Avoid smoking and second-hand smoke completely.','Take over-the-counter decongestants or antihistamines as directed.','Practise pursed-lip breathing to slow breathing and ease breathlessness.'],
+  head:      ['Rest in a quiet, dark room during a headache episode.','Apply a cold pack to the forehead or a warm pack to the back of the neck.','Stay hydrated; dehydration is a common headache trigger.','Take over-the-counter pain relief (paracetamol or ibuprofen) at first sign.','Practise deep breathing or progressive muscle relaxation.','Maintain a regular sleep schedule, going to bed and waking at the same time.','Gently massage the temples, neck, and shoulders to ease tension.','Use saline nasal spray or inhale steam to ease sinus pressure.','Identify and avoid personal triggers (certain foods, bright lights, stress).','Yawn, chew, or use the Valsalva manoeuvre to equalise ear pressure.'],
+  bones:     ['Apply ice (first 48 hrs) then heat to relieve joint pain and stiffness.','Take over-the-counter NSAIDs (ibuprofen) or paracetamol for pain.','Perform gentle low-impact exercise: swimming, cycling, walking.','Maintain a healthy weight to reduce load on weight-bearing joints.','Eat calcium-rich foods (dairy, leafy greens, fortified foods) and vitamin D.','Use supportive footwear with good arch support.','Elevate a swollen joint above heart level to reduce swelling.','Apply a topical anti-inflammatory cream (diclofenac gel) to affected joints.','Sleep on a supportive mattress and use a pillow between knees for back pain.','Practice correct posture when sitting and standing.'],
+  heart:     ['Follow a heart-healthy diet: low sodium, low saturated fat, high fibre.','Exercise moderately for 30 minutes most days of the week.','Monitor blood pressure regularly at home.','Reduce stress with relaxation techniques: meditation, yoga, breathing.','Limit alcohol consumption (max 14 units/week for adults).','Stop smoking completely; seek support if needed.','Maintain a healthy weight; even modest loss reduces cardiac risk.','Stay hydrated with water; limit caffeine and energy drinks.','Elevate legs to reduce ankle swelling.','Take prescribed medications consistently; never stop without medical advice.'],
+  mental:    ['Establish a regular daily routine with consistent sleep and wake times.','Exercise for 30 minutes daily: it significantly improves mood and reduces anxiety.','Practise mindfulness meditation or deep breathing for 10 minutes daily.','Limit caffeine, alcohol, and recreational drugs.','Stay socially connected: talk to friends, family, or support groups.','Write in a journal to process thoughts and identify negative patterns.','Challenge negative thoughts: ask yourself if there is evidence for them.','Set small, achievable daily goals to build momentum and confidence.','Spend time outdoors in natural daylight, especially in the morning.','Use relaxation apps or calming music at bedtime.'],
+  urinary:   ['Drink 2–3 litres of water daily to flush the urinary tract.','Urinate frequently; do not delay when you feel the urge.','Wipe front to back after using the toilet to prevent bacterial spread.','Urinate before and after sexual activity.','Drink unsweetened cranberry juice (evidence limited but generally safe).','Avoid caffeine, alcohol, and citrus which can irritate the bladder.','Apply a warm heating pad to the lower abdomen to ease cramps.','Take a warm bath to relieve discomfort (avoid bubble bath products).','Wear loose, breathable cotton underwear.','Stay at a healthy weight to reduce bladder pressure.'],
+  womens:    ['Apply a warm heating pad or hot water bottle to the lower abdomen for cramps.','Take ibuprofen at the start of menstrual pain for best effect.','Practise gentle yoga stretches (child\'s pose, cat-cow) to ease pelvic pain.','Stay hydrated and reduce salt, caffeine, and alcohol before periods.','Use a cool or warm compress on breast tissue for tenderness.','Wear a well-fitting supportive bra.','Apply plain yoghurt or probiotic cream to the vaginal area for thrush.','Use fragrance-free, pH-balanced intimate wash or just water.','Track menstrual cycle to identify patterns.','Engage in light aerobic exercise regularly to regulate hormones.'],
+  childrens: ['Ensure the child drinks plenty of fluids (water, diluted juice, breast milk).','Use a cool-mist humidifier in the child\'s room during respiratory illness.','Apply calamine lotion to itchy rashes to soothe discomfort.','Give age-appropriate paracetamol or ibuprofen for fever and pain.','Keep nappy area clean and dry; use barrier cream at each change.','Distract with play and comfort during teething; offer a cool teething ring.','Dress child in light clothing during fever; do not over-bundle.','Elevate the head of the cot slightly for a baby with reflux.','Offer small, frequent feeds to a vomiting child to prevent dehydration.','Keep vaccinations up to date as per national schedule.'],
+};
+
+const DOCTOR_IF = {
+  eyes:      ['Vision is significantly blurred or suddenly lost','Severe eye pain or injury occurred','Symptoms persist for more than 5–7 days','Eye discharge is thick or greenish yellow','A child under 1 year is affected','You have diabetes or a known immune disorder'],
+  teeth:     ['Tooth or jaw pain is severe and persistent','There is visible swelling of the face or neck','You have a high fever alongside dental pain','A tooth is knocked out (see dentist within 30 minutes)','You notice red or white patches in your mouth','Bleeding gums do not improve after 2 weeks of good hygiene'],
+  skin:      ['Skin becomes infected (increasing warmth, pus, red streaking)','Rash spreads rapidly or covers a large body area','You develop a high fever alongside the rash','Symptoms do not improve after 2–3 weeks of home treatment','A mole changes shape, size, or colour','You have difficulty breathing or swallowing (anaphylaxis risk)'],
+  stomach:   ['Blood in vomit or stool (red or black)','Severe abdominal pain that does not ease','Signs of dehydration: no urine output for 8+ hours, extreme thirst, confusion','Vomiting persists for more than 24 hours (or 12 hours in a child)','Unintentional weight loss','Jaundice (yellow skin or eyes)'],
+  fever:     ['Fever above 39.5°C (103°F) in adults or any fever in infants under 3 months','Fever lasts more than 3 days without improvement','Stiff neck, sensitivity to light, or confusion develop','Severe difficulty breathing','Signs of dehydration appear','A seizure occurs'],
+  injuries:  ['Severe pain, significant swelling, or visible deformity (possible fracture)','Wound does not stop bleeding after 10 minutes of direct pressure','Signs of infection: increasing redness, warmth, pus, red streaking','A burn is larger than the palm of your hand or affects the face, hands, or genitals','Numbness, tingling, or inability to move below the injury','A child is injured; always seek medical assessment'],
+  respiratory:['Severe difficulty breathing or cyanosis (blue lips/fingertips)','Coughing up blood or blood-streaked phlegm','Symptoms do not improve after 7–10 days','Chest pain accompanies breathing difficulty','High fever (above 39°C) with respiratory symptoms','A child under 2 develops significant breathing difficulty'],
+  head:      ['Sudden, very severe "thunderclap" headache (worst of your life)','Headache with stiff neck, fever, or rash','Neurological symptoms: weakness, speech difficulty, vision loss','Ear pain with high fever or discharge from the ear','Dizziness so severe it prevents standing or walking','Symptoms do not improve after 2–3 weeks'],
+  bones:     ['You cannot bear weight or use the affected limb','Severe swelling or deformity is present','Joint is hot, red, and swollen (possible infection or gout)','Symptoms do not improve after 2–3 weeks of home treatment','Nerve symptoms: numbness, tingling, or weakness','You have a history of cancer (rule out bone metastasis)'],
+  heart:     ['Chest pain, tightness, or pressure — call emergency services immediately','Sudden severe shortness of breath','Palpitations with dizziness or fainting','Blood pressure reading consistently above 140/90 mmHg','Unexplained swelling in both legs','Any cardiac symptom in a person with known heart disease'],
+  mental:    ['You have thoughts of self-harm or suicide — seek help immediately','Symptoms significantly interfere with work, relationships, or daily life','Psychotic symptoms develop (hallucinations, delusions)','Symptoms have persisted for more than 2 weeks despite self-care','You are using substances to cope','A child or teenager is affected'],
+  urinary:   ['High fever with back pain and chills (possible kidney infection)','Blood in urine','Severe pain in the flank, back, or groin','Symptoms do not resolve within 2–3 days of home treatment','You are pregnant and have UTI symptoms','Men with any urinary tract symptoms should always see a doctor'],
+  womens:    ['Heavy bleeding soaking more than one pad per hour','Severe pelvic pain','Fever with vaginal discharge (possible PID)','Periods absent for more than 3 months','Symptoms of pregnancy complication (severe vomiting, bleeding)','Symptoms do not resolve after home treatment'],
+  childrens: ['Infant under 3 months has any fever','Child has a febrile seizure','Signs of severe dehydration (no tears, very dry mouth, no urine for 8+ hours)','Breathing is rapid, laboured, or making a grunting sound','Rash is purple or does not fade when pressed (meningococcal sign)','Child is unusually difficult to rouse or very unresponsive'],
+};
+
+// ─── Helper utilities ─────────────────────────────────────────────────────────
+
+function pick(arr, n = 4) {
+  const shuffled = [...arr].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, n);
+}
+
+function slugify(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+function catForKey(key) {
+  const map = {
+    eyes: 'Eyes', teeth: 'Teeth & Mouth', skin: 'Skin',
+    stomach: 'Stomach', fever: 'Fever & Flu', injuries: 'Injuries',
+    respiratory: 'Respiratory', head: 'Head & Ear', bones: 'Bones & Joints',
+    heart: 'Heart & Blood', mental: 'Mental Health', urinary: 'Urinary',
+    womens: "Women's Health", childrens: "Children's Health",
+  };
+  return map[key] || key;
+}
+
+// Short intro templates
+function makeIntro(name, catKey) {
+  const intros = [
+    `${name} is a common condition affecting the ${catForKey(catKey).toLowerCase()} system, often causing discomfort that can be managed at home.`,
+    `${name} refers to inflammation, dysfunction, or infection of related structures that requires appropriate care to resolve.`,
+    `${name} is a medical condition characterised by specific signs and symptoms that range from mild to severe depending on the cause.`,
+    `${name} is a health condition that affects many people and can often be relieved with simple home measures alongside medical guidance.`,
+    `${name} describes a clinical condition in which the body's normal functioning is disrupted, resulting in characteristic symptoms.`,
+  ];
+  return intros[Math.floor(Math.random() * intros.length)];
+}
+
+// ─── Build disease list ────────────────────────────────────────────────────────
+
+const diseases = [];
+
+for (const [catKey, names] of Object.entries(SEED)) {
+  const causesBank   = CAUSES[catKey]   || CAUSES.fever;
+  const symptomsBank = SYMPTOMS[catKey] || SYMPTOMS.fever;
+  const remediesBank = REMEDIES[catKey] || REMEDIES.fever;
+  const doctorBank   = DOCTOR_IF[catKey]|| DOCTOR_IF.fever;
+
+  for (const name of names) {
+    diseases.push({
+      id:          slugify(name),
+      category:    catForKey(catKey),
+      category_id: catKey,
+      name,
+      intro:       makeIntro(name, catKey),
+      causes:      pick(causesBank, 4 + Math.floor(Math.random() * 2)),
+      symptoms:    pick(symptomsBank, 4 + Math.floor(Math.random() * 2)),
+      home_remedies: pick(remediesBank, 4 + Math.floor(Math.random() * 2)),
+      doctor_visit_if: pick(doctorBank, 3),
+      image: null,
+    });
+  }
+}
+
+// ─── Write output ─────────────────────────────────────────────────────────────
+
+const outDir  = path.join(__dirname, '..', 'assets');
+const outFile = path.join(outDir, 'diseases.json');
+
+if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+
+const output = {
+  generated:     new Date().toISOString(),
+  total:         diseases.length,
+  categories:    [...new Set(diseases.map(d => d.category))],
+  diseases,
+};
+
+fs.writeFileSync(outFile, JSON.stringify(output, null, 2), 'utf8');
+
+console.log(`✅  diseases.json written to: ${outFile}`);
+console.log(`📊  Total diseases: ${diseases.length}`);
+console.log(`🗂   Categories (${output.categories.length}): ${output.categories.join(', ')}`);
+
+const byCat = {};
+for (const d of diseases) byCat[d.category] = (byCat[d.category] || 0) + 1;
+for (const [cat, count] of Object.entries(byCat)) {
+  console.log(`     ${cat.padEnd(22)} ${count}`);
+}

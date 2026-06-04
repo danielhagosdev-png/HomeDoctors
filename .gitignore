@@ -1,0 +1,26 @@
+node_modules/
+.expo/
+dist/
+web-build/
+*.jks
+*.keystore
+*.p12
+*.pfx
+
+# NEVER commit these
+google-services.json
+GoogleService-Info.plist
+server/.env
+play-store-key.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
