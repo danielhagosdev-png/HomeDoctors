@@ -1,0 +1,7 @@
+# Files excluded from EAS build archive
+# The server/ folder is a separate Node.js proxy — not part of the Android build
+server/
+scripts/
+.env
+*.env
+server/.env
