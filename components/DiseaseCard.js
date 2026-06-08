@@ -8,6 +8,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { getCategoryMeta } from '../utils/imageMapper';
 
@@ -17,8 +18,11 @@ export default function DiseaseCard({ disease, onPress, onBookmark, bookmarked =
   const scale  = useRef(new Animated.Value(1)).current;
   const meta   = getCategoryMeta(disease.category_id || disease.category || '');
 
-  const onPressIn  = () => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, speed: 50 }).start();
-  const onPressOut = () => Animated.spring(scale, { toValue: 1,    useNativeDriver: true, speed: 30 }).start();
+  const onPressIn  = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, speed: 50 }).start();
+  };
+  const onPressOut = () => Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 30 }).start();
 
   return (
     <Animated.View style={[styles.wrap, { transform: [{ scale }] }]}>
@@ -58,7 +62,7 @@ export default function DiseaseCard({ disease, onPress, onBookmark, bookmarked =
         {onBookmark && (
           <TouchableOpacity
             style={styles.bookmarkBtn}
-            onPress={onBookmark}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onBookmark(); }}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons
